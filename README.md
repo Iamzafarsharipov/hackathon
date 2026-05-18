@@ -2,6 +2,16 @@
 
 A gamified Django study tracker for university hackathons: GPA prediction, grant safety analytics, daily habit streaks, weekly study quests, XP, badges, and a campus leaderboard.
 
+## Live GitHub Pages Version
+
+GitHub Pages cannot run a Django server, so this repository also includes a complete static frontend MVP:
+
+- `index.html`
+- `assets/css/styles.css`
+- `assets/js/app.js`
+
+Open the live site at `https://iamzafarsharipov.github.io/hackathon/`.
+
 ## Quick Start
 
 ```bash

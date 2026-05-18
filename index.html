@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EduQuest Arena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="assets/js/app.js"></script>
+</head>
+<body>
+  <div id="auth-screen" class="auth-shell">
+    <section class="auth-card">
+      <div class="brand-lockup">
+        <span>EduQuest</span>
+        <strong>Arena</strong>
+      </div>
+      <h1>Student success, gamified.</h1>
+      <p>Track your GPA safety, complete daily quests, build streaks, and climb the campus leaderboard.</p>
+
+      <div class="auth-tabs" role="tablist">
+        <button class="active" data-auth-tab="login">Login</button>
+        <button data-auth-tab="register">Register</button>
+      </div>
+
+      <form id="login-form" class="auth-form">
+        <label>Username<input id="login-username" autocomplete="username" required placeholder="zafar"></label>
+        <label>Password<input type="password" autocomplete="current-password" required placeholder="••••••••"></label>
+        <button class="primary-btn" type="submit">Enter Dashboard</button>
+      </form>
+
+      <form id="register-form" class="auth-form hidden">
+        <label>Full name<input id="register-name" required placeholder="Zafar Sharipov"></label>
+        <label>Username<input id="register-username" required placeholder="zafar"></label>
+        <label>Password<input type="password" required placeholder="Create password"></label>
+        <button class="primary-btn" type="submit">Create Arena Account</button>
+      </form>
+    </section>
+  </div>
+
+  <div id="app" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span>EduQuest</span>
+        <strong>Arena</strong>
+      </div>
+      <nav>
+        <a class="nav-link active" href="#dashboard" data-view="dashboard">Dashboard</a>
+        <a class="nav-link" href="#habits" data-view="habits">Daily Habits</a>
+        <a class="nav-link" href="#routine" data-view="routine">Daily Routine</a>
+        <a class="nav-link" href="#subjects" data-view="subjects">Subjects</a>
+        <a class="nav-link" href="#leaderboard" data-view="leaderboard">Leaderboard</a>
+      </nav>
+      <div class="profile-mini">
+        <span>Level <b id="level-value">1</b></span>
+        <strong><b id="xp-value">0</b> XP</strong>
+        <small><b id="streak-value">0</b> day streak · <b id="multiplier-value">1.0</b>x</small>
+      </div>
+      <button id="logout-btn" class="logout-btn">Logout</button>
+    </aside>
+
+    <main class="content">
+      <header class="hero-band">
+        <div>
+          <p>Student Command Center</p>
+          <h1>Welcome, <span id="student-name">Student</span></h1>
+          <span>Your grant safety, quests, streaks, and leaderboard rank update live in the browser.</span>
+        </div>
+        <button id="seed-btn" class="ghost-btn">Reset Demo Data</button>
+      </header>
+
+      <section id="dashboard" class="view active">
+        <div class="grid two">
+          <article class="panel predictor-panel">
+            <div class="panel-head">
+              <div>
+                <h2>Grant & GPA Predictor</h2>
+                <p id="grant-label">Calculating safety level...</p>
+              </div>
+              <div class="metric-big"><span id="gpa-value">0.00</span><small>GPA</small></div>
+            </div>
+            <div class="predictor-grid">
+              <div class="chart-wrap"><canvas id="grant-chart"></canvas></div>
+              <div class="stat-stack">
+                <div><span>Grant probability</span><strong id="grant-score">0%</strong></div>
+                <div><span>Habit completion</span><strong id="habit-rate">0%</strong></div>
+                <div><span>Exam readiness</span><strong id="readiness-score">0%</strong></div>
+              </div>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Achievement Badges</h2>
+                <p>Unlock badges by clearing weekly quests.</p>
+              </div>
+            </div>
+            <div id="badges-list" class="badge-grid"></div>
+          </article>
+        </div>
+
+        <div class="grid two lower-grid">
+          <article class="panel">
+            <h2>Weekly Study Quests</h2>
+            <div id="quest-subjects" class="subject-list"></div>
+          </article>
+          <article class="panel">
+            <h2>Campus Leaderboard</h2>
+            <div id="leaderboard-list" class="leaderboard"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="habits" class="view">
+        <article class="panel wide">
+          <h2>Daily Habit Multipliers</h2>
+          <p class="muted">Complete these today to raise grant probability and build your XP multiplier.</p>
+          <div id="habit-list" class="task-list"></div>
+        </article>
+      </section>
+
+      <section id="routine" class="view">
+        <article class="panel wide">
+          <h2>Daily Routine</h2>
+          <p class="muted">A focused day keeps the streak alive.</p>
+          <div id="routine-list" class="task-list"></div>
+        </article>
+      </section>
+
+      <section id="subjects" class="view">
+        <article class="panel wide">
+          <h2>Subject Progress</h2>
+          <div id="subject-detail-list" class="subject-detail-list"></div>
+        </article>
+      </section>
+
+      <section id="leaderboard" class="view">
+        <article class="panel wide">
+          <h2>Campus Rank</h2>
+          <div id="leaderboard-page" class="leaderboard"></div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="quest-modal">
+    <form method="dialog" class="quest-card">
+      <button class="modal-close" value="cancel">×</button>
+      <p class="eyebrow">Weekly Quest Room</p>
+      <h2 id="quest-title">Quest</h2>
+      <p id="quest-topic" class="muted"></p>
+      <div id="quiz-box" class="quiz-box"></div>
+      <button id="submit-quiz" type="button" class="primary-btn">Submit Quest</button>
+    </form>
+  </dialog>
+</body>
+</html>
