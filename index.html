@@ -53,7 +53,7 @@
         <a class="nav-link" href="#routine" data-view="routine">Daily Routine</a>
         <a class="nav-link" href="#calendar" data-view="calendar">Calendar</a>
         <a class="nav-link" href="#smart" data-view="smart">SMART Goals</a>
-        <a class="nav-link" href="#subjects" data-view="subjects">Subjects</a>
+        <a class="nav-link" href="#subjects" data-view="subjects">Grades</a>
         <a class="nav-link" href="#leaderboard" data-view="leaderboard">Leaderboard</a>
       </nav>
       <div class="profile-mini">
@@ -174,9 +174,16 @@
       </section>
 
       <section id="subjects" class="view">
-        <article class="panel wide">
-          <h2>Subject Progress</h2>
-          <div id="subject-detail-list" class="subject-detail-list"></div>
+        <article class="grades-panel">
+          <div class="grades-head">
+            <div>
+              <p class="eyebrow">Grade Studio</p>
+              <h2>Grades</h2>
+              <span>Assignments and quizzes are 30%, midterm is 30%, and final exam is 40%.</span>
+            </div>
+            <select id="grade-subject-select" aria-label="Choose subject"></select>
+          </div>
+          <div id="grade-calculator" class="grade-calculator"></div>
         </article>
       </section>
 

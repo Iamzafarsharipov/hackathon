@@ -30,7 +30,8 @@ const defaults = {
     subject("Linear Algebra", "#38bdf8", ["Vectors & Matrices", "Gaussian Elimination", "Eigenvalues", "Vector Spaces"]),
     subject("Computer Programming 2", "#34d399", ["OOP Patterns", "Data Structures", "Files and APIs", "Testing"]),
     subject("Calculus 2", "#fb923c", ["Integrals", "Series", "Parametric Curves", "Multivariable Intro"]),
-    subject("Physics", "#a78bfa", ["Kinematics", "Newton Laws", "Energy", "Electric Fields"])
+    subject("Physics", "#a78bfa", ["Kinematics", "Newton Laws", "Energy", "Electric Fields"]),
+    subject("Academic and Communication Skills", "#f472b6", ["Academic Writing", "Presentations", "Critical Reading", "Team Communication"])
   ],
   leaders: [
     { name: "Sulaymon Abdullayev", department: "DT", xp: 2840, idNumber: "2531001" },
@@ -90,6 +91,7 @@ function subject(name, accent, topics) {
     name,
     accent,
     currentGrade: 3.2,
+    grades: defaultGrades(),
     weeks: Array.from({ length: 16 }, (_, index) => ({
       week: index + 1,
       topic: topics[index % topics.length],
@@ -97,6 +99,15 @@ function subject(name, accent, topics) {
       score: 0,
       done: false
     }))
+  };
+}
+
+function defaultGrades() {
+  return {
+    midterm: "",
+    final: "",
+    quizzes: ["", "", "", "", "", ""],
+    assignments: ["", "", ""]
   };
 }
 
@@ -111,13 +122,22 @@ function normalizeState(value) {
     ...value,
     habits: value.habits || structuredClone(defaults.habits),
     routine: value.routine || structuredClone(defaults.routine),
-    subjects: value.subjects || structuredClone(defaults.subjects),
+    subjects: normalizeSubjects(value.subjects || structuredClone(defaults.subjects)),
     leaders: normalizeLeaders(value.leaders || structuredClone(defaults.leaders)),
     userDirectory: value.userDirectory || [],
     badges: value.badges || [],
     smartGoals: value.smartGoals || [],
     customEvents: value.customEvents || {}
   };
+}
+
+function normalizeSubjects(subjects) {
+  const names = new Set(subjects.map(item => item.name));
+  const list = subjects.map(item => ({ ...item, grades: item.grades || defaultGrades() }));
+  defaults.subjects.forEach(item => {
+    if (!names.has(item.name)) list.push(structuredClone(item));
+  });
+  return list;
 }
 
 function normalizeLeaders(leaders) {
@@ -272,15 +292,90 @@ function renderSubjects() {
     </article>`;
   }).join("");
   qs("#quest-subjects").innerHTML = cards;
-  qs("#subject-detail-list").innerHTML = state.subjects.map(item => {
-    const avg = Math.round(item.weeks.reduce((sum, week) => sum + week.readiness, 0) / item.weeks.length);
-    const completed = item.weeks.filter(week => week.done).length;
-    return `<div class="subject-detail">
-      <strong>${escapeHTML(item.name)}</strong>
-      <p class="muted">${completed} / 16 weeks cleared - Current grade ${item.currentGrade.toFixed(2)}</p>
-      <div class="progress-bar" style="--value:${avg}%"><span></span></div>
-    </div>`;
-  }).join("");
+  renderGradeCalculator();
+}
+
+function gradeLetter(score) {
+  if (score === null || Number.isNaN(score)) return "-";
+  if (score >= 97) return "A+";
+  if (score >= 90) return "A";
+  if (score >= 87) return "B+";
+  if (score >= 80) return "B";
+  if (score >= 77) return "C+";
+  if (score >= 70) return "C";
+  if (score >= 60) return "D";
+  return "F";
+}
+
+function average(values) {
+  const numbers = values.map(Number).filter(value => !Number.isNaN(value));
+  if (!numbers.length) return null;
+  return numbers.reduce((sum, value) => sum + value, 0) / numbers.length;
+}
+
+function gradeSummary(subjectItem) {
+  const quizAvg = average(subjectItem.grades.quizzes);
+  const assignmentAvg = average(subjectItem.grades.assignments);
+  const coursework = average([...subjectItem.grades.quizzes, ...subjectItem.grades.assignments]);
+  const midterm = Number(subjectItem.grades.midterm);
+  const finalExam = Number(subjectItem.grades.final);
+  const hasMidterm = !Number.isNaN(midterm);
+  const hasFinal = !Number.isNaN(finalExam);
+  const overall = (coursework ?? 0) * 0.3 + (hasMidterm ? midterm : 0) * 0.3 + (hasFinal ? finalExam : 0) * 0.4;
+  const knownWeight = (coursework === null ? 0 : 30) + (hasMidterm ? 30 : 0) + (hasFinal ? 40 : 0);
+  const projected = knownWeight ? overall / knownWeight * 100 : null;
+  return { quizAvg, assignmentAvg, coursework, midterm: hasMidterm ? midterm : null, finalExam: hasFinal ? finalExam : null, overall, knownWeight, projected };
+}
+
+function renderGradeCalculator() {
+  const select = qs("#grade-subject-select");
+  if (!select) return;
+  const current = select.value || state.subjects[0]?.name;
+  select.innerHTML = state.subjects.map(item => `<option value="${escapeHTML(item.name)}">${escapeHTML(item.name)}</option>`).join("");
+  select.value = state.subjects.some(item => item.name === current) ? current : state.subjects[0].name;
+  const subjectItem = state.subjects.find(item => item.name === select.value) || state.subjects[0];
+  const summary = gradeSummary(subjectItem);
+  qs("#grade-calculator").innerHTML = `
+    <section class="grade-hero" style="--accent:${subjectItem.accent}">
+      <div>
+        <span>Current projection</span>
+        <strong>${summary.projected === null ? "--" : `${summary.projected.toFixed(2)}%`}</strong>
+        <small>${summary.projected === null ? "Enter results to calculate" : `${gradeLetter(summary.projected)} - ${summary.knownWeight}% of grade known`}</small>
+      </div>
+      <div class="grade-weight-map">
+        <span>Coursework 30%</span>
+        <span>Midterm 30%</span>
+        <span>Final 40%</span>
+      </div>
+    </section>
+    ${gradeRow(subjectItem, "Midterm", "midterm", subjectItem.grades.midterm, summary.midterm, "30%")}
+    ${gradeRow(subjectItem, "Final Exam", "final", subjectItem.grades.final, summary.finalExam, "40%")}
+    ${gradeGroup(subjectItem, "Quiz", "quizzes", summary.quizAvg)}
+    ${gradeGroup(subjectItem, "Assignments", "assignments", summary.assignmentAvg)}
+    <section class="grade-total">
+      <span>Weighted overall</span>
+      <strong>${summary.projected === null ? "--" : `${summary.projected.toFixed(2)}% (${gradeLetter(summary.projected)})`}</strong>
+    </section>`;
+}
+
+function gradeRow(subjectItem, label, key, value, score, weight) {
+  return `<section class="grade-row">
+    <div><span class="chevron">›</span><strong>${label}</strong><small>${weight} of overall grade</small></div>
+    <label><input class="grade-input" data-grade-subject="${escapeHTML(subjectItem.name)}" data-grade-key="${key}" value="${escapeHTML(value)}" type="number" min="0" max="100" placeholder="-"></label>
+    <b>${score === null ? "-" : `${score.toFixed(2)}% (${gradeLetter(score)})`}</b>
+  </section>`;
+}
+
+function gradeGroup(subjectItem, title, key, total) {
+  const values = subjectItem.grades[key];
+  return `<section class="grade-folder">
+    <header><span>Folder</span><strong>${title}</strong><b>${total === null ? "-" : `${total.toFixed(2)}% (${gradeLetter(total)})`}</b></header>
+    ${values.map((value, index) => `<div class="grade-row compact">
+      <div><span class="chevron">›</span><strong>${title.slice(0, -1)} - ${index + 1}</strong></div>
+      <label><input class="grade-input" data-grade-subject="${escapeHTML(subjectItem.name)}" data-grade-key="${key}" data-grade-index="${index}" value="${escapeHTML(value)}" type="number" min="0" max="100" placeholder="-"></label>
+      <b>${value === "" ? "-" : `${Number(value).toFixed(2)}% (${gradeLetter(Number(value))})`}</b>
+    </div>`).join("")}
+  </section>`;
 }
 
 function renderTasks() {
@@ -590,6 +685,21 @@ document.addEventListener("click", event => {
   }
 });
 
+document.addEventListener("change", event => {
+  const input = event.target.closest("[data-grade-subject]");
+  if (!input) return;
+  const subjectItem = state.subjects.find(item => item.name === input.dataset.gradeSubject);
+  if (!subjectItem) return;
+  const value = input.value === "" ? "" : Math.max(0, Math.min(100, Number(input.value)));
+  if (input.dataset.gradeIndex !== undefined) {
+    subjectItem.grades[input.dataset.gradeKey][Number(input.dataset.gradeIndex)] = value;
+  } else {
+    subjectItem.grades[input.dataset.gradeKey] = value;
+  }
+  saveState();
+  renderGradeCalculator();
+});
+
 qs("#month-select").addEventListener("change", event => {
   activeMonth = Number(event.target.value);
   selectedDate = new Date(YEAR, activeMonth, 1);
@@ -613,6 +723,7 @@ qs("#next-month").addEventListener("click", () => {
 });
 
 qs("#course-filter").addEventListener("change", renderCalendar);
+qs("#grade-subject-select").addEventListener("change", renderGradeCalculator);
 
 qs("#new-event-btn").addEventListener("click", () => {
   const customTitle = prompt("Event title");
