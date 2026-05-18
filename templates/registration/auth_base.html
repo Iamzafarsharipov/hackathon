@@ -1,0 +1,31 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EduQuest Arena</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #121212; }
+    input { width: 100%; border-radius: 0.75rem; border: 1px solid #2f3a46; background: #171717; padding: 0.8rem 1rem; color: white; outline: none; }
+    input:focus { border-color: #38bdf8; box-shadow: 0 0 22px rgba(56, 189, 248, 0.28); }
+    label { color: #cbd5e1; font-size: 0.9rem; }
+  </style>
+</head>
+<body class="min-h-screen text-white">
+  <main class="grid min-h-screen place-items-center px-5">
+    <section class="w-full max-w-md rounded-2xl border border-white/10 bg-[#1e1e1e]/90 p-8 shadow-2xl shadow-cyan-950/30">
+      <div class="mb-8">
+        <p class="text-sm font-semibold uppercase tracking-[0.35em] text-cyan-300">EduQuest Arena</p>
+        <h1 class="mt-3 text-3xl font-bold">{% block title %}{% endblock %}</h1>
+        <p class="mt-2 text-sm text-slate-400">{% block subtitle %}{% endblock %}</p>
+      </div>
+      {% if form.errors %}
+        <div class="mb-5 rounded-xl border border-rose-400/30 bg-rose-500/10 p-3 text-sm text-rose-200">Please check the highlighted fields and try again.</div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{% extends "arena/base.html" %}
+{% block content %}
+<section class="mx-auto max-w-4xl">
+  <a class="text-sm font-semibold text-cyan-300" href="{% url 'dashboard' %}">Back to dashboard</a>
+  <div class="mt-5 rounded-2xl border border-white/10 bg-[#1e1e1e] p-6">
+    <p class="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-300">Weekly Quest Room</p>
+    <h2 class="mt-2 text-3xl font-black">{{ progress.subject.name }} · Week {{ progress.week_number }}</h2>
+    <p class="mt-2 text-slate-400">{{ progress.topic }} · Current readiness {{ progress.readiness }}% · Best quiz {{ progress.quiz_score }}%</p>
+    <form method="post" action="{% url 'submit_quest' progress.id %}" class="mt-6 space-y-5">
+      {% csrf_token %}
+      {% for question in questions %}
+        <fieldset class="rounded-xl border border-white/10 bg-black/20 p-5">
+          <legend class="font-bold">{{ forloop.counter }}. {{ question.q }}</legend>
+          <div class="mt-4 grid gap-3">
+            {% for choice in question.choices %}
+              <label class="flex cursor-pointer items-center gap-3 rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">
+                <input class="h-4 w-4 accent-cyan-300" type="radio" name="q{{ forloop.parentloop.counter }}" value="{{ forloop.counter0 }}" required>
+                <span>{{ choice }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+      {% endfor %}
+      <button class="rounded-xl bg-cyan-400 px-6 py-3 font-bold text-slate-950 shadow-lg shadow-cyan-500/20 hover:bg-cyan-300">Submit Quest</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

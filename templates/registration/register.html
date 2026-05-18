@@ -1,0 +1,13 @@
+{% extends "registration/auth_base.html" %}
+{% block title %}Create account{% endblock %}
+{% block subtitle %}Start with seeded subjects, habits, XP, and weekly quest rooms.{% endblock %}
+{% block content %}
+<form method="post" class="space-y-5">
+  {% csrf_token %}
+  <div>{{ form.username.label_tag }}{{ form.username }}</div>
+  <div>{{ form.password1.label_tag }}{{ form.password1 }}</div>
+  <div>{{ form.password2.label_tag }}{{ form.password2 }}</div>
+  <button class="w-full rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 shadow-lg shadow-cyan-500/25 transition hover:bg-cyan-300">Enter Arena</button>
+</form>
+<p class="mt-6 text-center text-sm text-slate-400">Already registered? <a class="font-semibold text-cyan-300" href="{% url 'login' %}">Login</a></p>
+{% endblock %}

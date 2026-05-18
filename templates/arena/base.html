@@ -1,0 +1,48 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EduQuest Arena</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script defer src="{% static 'arena/app.js' %}"></script>
+</head>
+<body class="bg-[#121212] text-slate-100">
+  <form class="hidden">{% csrf_token %}</form>
+  <div class="min-h-screen lg:flex">
+    <aside class="border-b border-white/10 bg-[#171717] p-4 lg:fixed lg:inset-y-0 lg:w-72 lg:border-b-0 lg:border-r">
+      <div class="flex items-center justify-between lg:block">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.32em] text-cyan-300">EduQuest</p>
+          <h1 class="mt-2 text-2xl font-black">Arena</h1>
+        </div>
+        <div class="rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-sm lg:mt-6">
+          Lv. {{ request.user.profile.level }} · <span data-xp>{{ request.user.profile.xp }}</span> XP
+        </div>
+      </div>
+      <nav class="mt-8 grid gap-2 text-sm font-semibold">
+        <a class="rounded-xl bg-white/10 px-4 py-3 text-white" href="{% url 'dashboard' %}">Dashboard</a>
+        <a class="rounded-xl px-4 py-3 text-slate-300 hover:bg-white/10" href="#habits">Daily Habits</a>
+        <a class="rounded-xl px-4 py-3 text-slate-300 hover:bg-white/10" href="#routine">Daily Routine</a>
+        <a class="rounded-xl px-4 py-3 text-slate-300 hover:bg-white/10" href="{% url 'leaderboard' %}">Leaderboard</a>
+      </nav>
+      <form class="mt-8" method="post" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button class="w-full rounded-xl border border-rose-400/30 px-4 py-3 text-left font-semibold text-rose-200 hover:bg-rose-500/10">Logout</button>
+      </form>
+    </aside>
+    <main class="w-full p-4 sm:p-6 lg:ml-72 lg:p-8">
+      {% if messages %}
+        <div class="mb-5 space-y-2">
+          {% for message in messages %}
+            <div class="rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-100">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

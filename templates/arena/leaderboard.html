@@ -1,0 +1,18 @@
+{% extends "arena/base.html" %}
+{% block content %}
+<section class="mx-auto max-w-4xl rounded-2xl border border-white/10 bg-[#1e1e1e] p-6">
+  <p class="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-300">Campus Rank</p>
+  <h2 class="mt-2 text-3xl font-black">Leaderboard</h2>
+  <div class="mt-6 overflow-hidden rounded-xl border border-white/10">
+    {% for leader in leaders %}
+      <div class="grid grid-cols-[60px_1fr_120px] items-center border-b border-white/10 px-4 py-4 last:border-b-0">
+        <span class="font-black text-cyan-300">#{{ forloop.counter }}</span>
+        <span class="font-semibold">{{ leader.username }}</span>
+        <span class="text-right text-slate-300">{{ leader.profile.xp }} XP</span>
+      </div>
+    {% empty %}
+      <p class="p-5 text-slate-400">No ranked students yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

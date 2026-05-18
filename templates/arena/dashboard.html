@@ -1,0 +1,109 @@
+{% extends "arena/base.html" %}
+{% block content %}
+<section class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+  <div>
+    <p class="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-300">Student Command Center</p>
+    <h2 class="mt-2 text-4xl font-black">Hi, {{ request.user.username }}</h2>
+    <p class="mt-2 text-slate-400">Your grant safety, study quests, habits, and streaks in one arena.</p>
+  </div>
+  <div class="rounded-2xl border border-white/10 bg-[#1e1e1e] px-5 py-4">
+    <p class="text-sm text-slate-400">Streak multiplier</p>
+    <p class="text-2xl font-black"><span data-streak>{{ profile.streak }}</span> days · {{ profile.xp_multiplier }}x</p>
+  </div>
+</section>
+
+<section class="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
+  <div class="rounded-2xl border border-white/10 bg-[#1e1e1e] p-5">
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h3 class="text-xl font-bold">Grant & GPA Predictor</h3>
+        <p class="text-sm text-slate-400">{{ metrics.grant_level }} based on habits, GPA, and exam readiness.</p>
+      </div>
+      <div class="text-right">
+        <p class="text-sm text-slate-400">Estimated GPA</p>
+        <p class="text-4xl font-black text-cyan-300">{{ metrics.estimated_gpa }}</p>
+      </div>
+    </div>
+    <div class="mt-6 grid gap-5 md:grid-cols-2">
+      <div class="min-h-72"><canvas id="grantChart"></canvas></div>
+      <div class="grid content-center gap-3">
+        <div class="rounded-xl border border-white/10 bg-black/20 p-4"><span class="text-slate-400">Grant probability</span><strong class="float-right text-cyan-300">{{ metrics.grant_score }}%</strong></div>
+        <div class="rounded-xl border border-white/10 bg-black/20 p-4"><span class="text-slate-400">Habit completion</span><strong class="float-right text-emerald-300">{{ metrics.habit_rate }}%</strong></div>
+        <div class="rounded-xl border border-white/10 bg-black/20 p-4"><span class="text-slate-400">Exam readiness</span><strong class="float-right text-orange-300">{{ metrics.readiness }}%</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rounded-2xl border border-white/10 bg-[#1e1e1e] p-5">
+    <h3 class="text-xl font-bold">Achievement Badges</h3>
+    <div class="mt-5 grid gap-3">
+      {% for badge in badges %}
+        <div class="rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-4">
+          <p class="font-bold">{{ badge.title }}</p>
+          <p class="text-sm text-slate-400">{{ badge.description }}</p>
+        </div>
+      {% empty %}
+        <p class="rounded-xl border border-dashed border-white/10 p-4 text-sm text-slate-400">Clear a weekly quest to unlock your first badge.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="mt-5 grid gap-5 xl:grid-cols-[1fr_0.8fr]">
+  <div class="rounded-2xl border border-white/10 bg-[#1e1e1e] p-5">
+    <h3 class="text-xl font-bold">Study Quests</h3>
+    <div class="mt-5 grid gap-4 md:grid-cols-2">
+      {% for subject in subjects %}
+        <article class="rounded-xl border border-white/10 bg-black/20 p-4">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold">{{ subject.name }}</h4>
+            <span class="text-sm text-slate-400">{{ subject.average_readiness }}%</span>
+          </div>
+          <div class="mt-4 grid grid-cols-8 gap-2">
+            {% for week in subject.weekly_progress.all %}
+              <a title="Week {{ week.week_number }}: {{ week.topic }}" href="{% url 'quest_room' week.id %}" class="grid aspect-square place-items-center rounded-lg text-xs font-bold {% if week.completed %}bg-cyan-300 text-slate-950{% else %}bg-white/10 text-slate-300 hover:bg-white/20{% endif %}">{{ week.week_number }}</a>
+            {% endfor %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="grid gap-5">
+    <section id="habits" class="rounded-2xl border border-white/10 bg-[#1e1e1e] p-5">
+      <h3 class="text-xl font-bold">Daily Habits</h3>
+      <div class="mt-4 grid gap-3">
+        {% for habit in habits %}
+          <button data-toggle-url="{% url 'toggle_habit' habit.id %}" data-completed="{% if habit.id in completed_habit_ids %}true{% else %}false{% endif %}" class="rounded-xl border border-white/10 bg-black/20 p-4 text-left transition hover:border-cyan-300/50 {% if habit.id in completed_habit_ids %}ring-2 ring-cyan-300{% endif %}">
+            <span class="font-semibold">{{ habit.name }}</span>
+            <span class="float-right text-sm text-cyan-300">+{{ habit.xp_reward }} XP</span>
+          </button>
+        {% endfor %}
+      </div>
+    </section>
+    <section id="routine" class="rounded-2xl border border-white/10 bg-[#1e1e1e] p-5">
+      <h3 class="text-xl font-bold">Daily Routine</h3>
+      <div class="mt-4 grid gap-3">
+        {% for item in routines %}
+          <button data-toggle-url="{% url 'toggle_routine' item.id %}" class="rounded-xl border border-white/10 bg-black/20 p-4 text-left transition hover:border-emerald-300/50 {% if item.id in completed_routine_ids %}ring-2 ring-cyan-300{% endif %}">
+            <span class="text-sm text-slate-400">{{ item.slot }}</span>
+            <span class="mt-1 block font-semibold">{{ item.title }}</span>
+          </button>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</section>
+
+<script>
+const grant = {{ metrics.grant_score }};
+new Chart(document.getElementById("grantChart"), {
+  type: "doughnut",
+  data: {
+    labels: ["Grant Safety", "Gap"],
+    datasets: [{ data: [grant, 100 - grant], backgroundColor: ["#22d3ee", "#27272a"], borderWidth: 0 }]
+  },
+  options: { cutout: "72%", plugins: { legend: { labels: { color: "#cbd5e1" } } } }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "registration/auth_base.html" %}
+{% block title %}Welcome back{% endblock %}
+{% block subtitle %}Login to protect your grant streak and clear this week's quests.{% endblock %}
+{% block content %}
+<form method="post" class="space-y-5">
+  {% csrf_token %}
+  <div>{{ form.username.label_tag }}{{ form.username }}</div>
+  <div>{{ form.password.label_tag }}{{ form.password }}</div>
+  <button class="w-full rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 shadow-lg shadow-cyan-500/25 transition hover:bg-cyan-300">Login</button>
+</form>
+<p class="mt-6 text-center text-sm text-slate-400">New student? <a class="font-semibold text-cyan-300" href="{% url 'register' %}">Create your arena account</a></p>
+{% endblock %}
