@@ -6,8 +6,8 @@ const uzDayNames = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanb
 
 const defaults = {
   loggedIn: false,
-  studentName: "Zafar",
-  username: "zafar",
+  studentName: "Name",
+  username: "name",
   xp: 0,
   streak: 0,
   multiplier: 1,
