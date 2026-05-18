@@ -385,10 +385,8 @@ function renderSelectedEvents() {
 
 function calendarEventTemplate(item, date) {
   const headerClass = item.type === "group" ? "group" : item.type === "assignment" ? "assignment" : "";
-  const label = item.type === "lecture" ? "Lecture" : item.type === "group" ? "Group" : "Due";
   return `<article class="calendar-event">
     <header class="calendar-event-header ${headerClass}">
-      <span class="event-icon">${label}</span>
       <h3>${escapeHTML(item.title)}</h3>
     </header>
     <div class="calendar-event-body">
