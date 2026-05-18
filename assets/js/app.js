@@ -1,4 +1,8 @@
-const STORAGE_KEY = "eduquest-arena-state-v2";
+const STORAGE_KEY = "eduquest-arena-state-v3";
+const YEAR = 2026;
+const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const uzDayNames = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
 
 const defaults = {
   loggedIn: false,
@@ -8,6 +12,8 @@ const defaults = {
   streak: 0,
   multiplier: 1,
   badges: [],
+  smartGoals: [],
+  customEvents: {},
   habits: [
     { id: 1, title: "90 min deep study", xp: 25, done: false },
     { id: 2, title: "Review lecture notes", xp: 20, done: false },
@@ -21,7 +27,7 @@ const defaults = {
   ],
   subjects: [
     subject("Linear Algebra", "#38bdf8", ["Vectors & Matrices", "Gaussian Elimination", "Eigenvalues", "Vector Spaces"]),
-    subject("Computer Programming 2", "#34d399", ["OOP Patterns", "Data Structures", "Files & APIs", "Testing"]),
+    subject("Computer Programming 2", "#34d399", ["OOP Patterns", "Data Structures", "Files and APIs", "Testing"]),
     subject("Calculus 2", "#fb923c", ["Integrals", "Series", "Parametric Curves", "Multivariable Intro"]),
     subject("Physics", "#a78bfa", ["Kinematics", "Newton Laws", "Energy", "Electric Fields"])
   ],
@@ -33,72 +39,45 @@ const defaults = {
   ]
 };
 
-let state = loadState();
+const weeklySchedule = {
+  1: [
+    event("lecture", "MATH211 - Calculus II - Lecture", "09:00", "11:00", "Course event", "Prof. Mutti Ur Rehman", "Conference hall", "Calculus II (Spring 25/26)"),
+    event("lecture", "COMS210 - Computer Programming II - Lecture", "11:00", "13:00", "Course event", "Prof. Sukhrob Yangibaev", "Conference hall", "Computer Programming II (Spring 25/26)"),
+    event("lecture", "Ma'rifat darslari (Spring 25/26)", "13:00", "13:30", "Course event", "Mrs. Atadjanova Y. and Mr. Azadov J.", "Conference hall", "Ma'rifat Darslari (Spring 25/26)")
+  ],
+  2: [
+    event("lecture", "PHYS101 - Physics I - Lecture", "09:00", "11:00", "Course event", "Prof. Cosimo Buffone", "Conference Hall", "Physics I (Spring 25/26)"),
+    event("lecture", "MATH201 - Linear Algebra - Lecture", "11:00", "13:00", "Course event", "Academic staff", "Conference hall", "Linear Algebra (Spring 25/26)"),
+    event("group", "MATH211 - Calculus II - Tutorial", "14:00", "16:00", "Group event", "Prof. Mutti Ur Rehman", "8 - Tutorial 9", "Calculus II (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort")
+  ],
+  3: [
+    event("group", "HASS111 - Academic and Communication Skills II - Tutorial", "09:00", "11:00", "Group event", "Prof. Risolat Iskandarova", "18 - Tutorial 5", "Academic and Communication Skills II (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort"),
+    event("group", "PHY101 - Physics I - Tutorial", "11:00", "13:00", "Group event", "Prof. Jemshit Yovvyev", "10 - Tutorial 9", "Physics I (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort"),
+    event("group", "COMS210 - Computer Programming II - Lab", "14:00", "16:00", "Group event", "Prof. Sukhrob Yangibaev", "10 - Computer Lab 1", "Computer Programming II (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort")
+  ],
+  4: [
+    event("group", "HASS111 - Academic and Communication Skills II - Tutorial", "09:00", "11:00", "Group event", "Prof. Risolat Iskandarova", "18 - Tutorial 5", "Academic and Communication Skills II (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort"),
+    event("group", "PHY101 - Physics I - Lab", "11:00", "13:00", "Group event", "Prof. Cosimo Buffone", "9 - Physics lab", "Physics I (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort")
+  ],
+  5: [
+    event("group", "COMS210 - Computer Programming II - Lab", "09:00", "11:00", "Group event", "Prof. Sukhrob Yangibaev", "10 - Computer Lab 1", "Computer Programming II (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort"),
+    event("group", "MATH201 - Linear Algebra - Tutorial", "11:00", "13:00", "Group event", "Academic staff", "19 - Tutorial 4", "Linear Algebra (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort")
+  ]
+};
+
+let state = normalizeState(loadState());
 let grantChart;
 let activeQuest = null;
-let activeCalendarIndex = 1;
+let today = new Date();
+let activeMonth = today.getFullYear() === YEAR ? today.getMonth() : 3;
+let selectedDate = new Date(YEAR, activeMonth, Math.min(today.getDate(), daysInMonth(YEAR, activeMonth)));
+let pomodoroSeconds = 25 * 60;
+let pomodoroInterval = null;
+let remindersEnabled = false;
+let lastReminderKey = "";
 
-const calendarDays = [
-  {
-    label: "Sunday, 5 April 2026",
-    short: "Sunday",
-    events: []
-  },
-  {
-    label: "Monday, 6 April 2026",
-    short: "Monday",
-    events: [
-      event("lecture", "MATH211-Calculus II-Lecture", "Monday, 6 April, 9:00 AM » 11:00 AM", "Course event", "Prof. Mutti Ur Rehman", "Conference hall", "Calculus II (Spring 25/26)"),
-      event("lecture", "COMS210 - Computer Programming II - Lecture", "Monday, 6 April, 11:00 AM » 1:00 PM", "Course event", "Prof. Sukhrob Yangibaev", "Conference hall", "Computer Programming II (Spring 25/26)"),
-      event("lecture", "Ma'rifat darslari (Spring 25/26)", "Monday, 6 April, 1:00 PM » 1:30 PM", "Course event", "Mrs.Atadjanova Y. and Mr.Azadov J.", "Conference hall", "Ma'rifat Darslari (Spring 25/26)")
-    ]
-  },
-  {
-    label: "Tuesday, 7 April 2026",
-    short: "Tuesday",
-    events: [
-      event("lecture", "PHYS101 - Physics I - Lecture", "Tuesday, 7 April, 9:00 AM » 11:00 AM", "Course event", "Prof. Cosimo Buffone", "Conference Hall", "Physics I (Spring 25/26)"),
-      event("lecture", "MATH201 - Linear Algebra - Lecture", "Tuesday, 7 April, 11:00 AM » 1:00 PM", "Course event", "", "Conference hall", "Linear Algebra (Spring 25/26)"),
-      event("group", "MATH211 - Calculus II - Tutorial", "Tuesday, 7 April, 2:00 PM » 4:00 PM", "Group event", "Prof. Mutti Ur Rehman", "8 - Tutorial 9", "Calculus II (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort")
-    ]
-  },
-  {
-    label: "Wednesday, 8 April 2026",
-    short: "Wednesday",
-    events: [
-      event("group", "HASS111 - Academic and Communication Skills II - Tutorial", "Wednesday, 8 April, 9:00 AM » 11:00 AM", "Group event", "Prof. Risolat Iskandarova", "18 - Tutorial 5", "Academic & Communication Skills II (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort"),
-      event("group", "PHY101 - Physics I - Tutorial", "Wednesday, 8 April, 11:00 AM » 1:00 PM", "Group event", "Prof. Jemshit Yovvyev", "10 - Tutorial - 9", "Physics I (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort"),
-      event("group", "COMS210 - Computer Programming II - Lab", "Wednesday, 8 April, 2:00 PM » 4:00 PM", "Group event", "Prof. Sukhrob Yangibaev", "10 - Computer Lab 1", "Computer Programming II (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort")
-    ]
-  },
-  {
-    label: "Thursday, 9 April 2026",
-    short: "Thursday",
-    events: [
-      event("group", "HASS111 - Academic and Communication Skills II - Tutorial", "Thursday, 9 April, 9:00 AM » 11:00 AM", "Group event", "Prof. Risolat Iskandarova", "18 - Tutorial 5", "Academic & Communication Skills II (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort"),
-      event("group", "PHY101 - Physics I - Lab", "Thursday, 9 April, 11:00 AM » 1:00 PM", "Group event", "Prof. Cosimo Buffone", "9 - Physics lab", "Physics I (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort")
-    ]
-  },
-  {
-    label: "Friday, 10 April 2026",
-    short: "Friday",
-    events: [
-      event("group", "COMS210 - Computer Programming II - Lab", "Friday, 10 April, 9:00 AM » 11:00 AM", "Group event", "Prof. Sukhrob Yangibaev", "10 - Computer Lab 1", "Computer Programming II (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort"),
-      event("group", "MATH201 - Linear Algebra - Tutorial", "Friday, 10 April, 11:00 AM » 1:00 PM", "Group event", "", "19 - Tutorial 4", "Linear Algebra (Spring 25/26)", "FSE02-Software Engineering Freshman Spring 25/26 cohort"),
-      {
-        type: "assignment",
-        title: "Home Assignment-02 is due",
-        time: "Friday, 10 April, 5:00 PM",
-        category: "Course event",
-        details: "PHYS101: Physics I | Homework Assignment # 2<br>Due date: Apr 10, 2025, 17:00<br>Submission room: Professor’s Room #7<br>Instructions:<ul><li>You may solve the problems using any method explained during lectures or tutorial classes.</li><li>Put your name and surname on each page.</li></ul>",
-        course: "Physics I (Spring 25/26)"
-      }
-    ]
-  }
-];
-
-function event(type, title, time, category, teacher, location, course, cohort = "") {
-  return { type, title, time, category, teacher, location, course, cohort };
+function event(type, title, start, end, category, teacher, location, course, cohort = "") {
+  return { type, title, start, end, category, teacher, location, course, cohort };
 }
 
 function subject(name, accent, topics) {
@@ -121,6 +100,20 @@ function loadState() {
   return saved ? JSON.parse(saved) : structuredClone(defaults);
 }
 
+function normalizeState(value) {
+  return {
+    ...structuredClone(defaults),
+    ...value,
+    habits: value.habits || structuredClone(defaults.habits),
+    routine: value.routine || structuredClone(defaults.routine),
+    subjects: value.subjects || structuredClone(defaults.subjects),
+    leaders: value.leaders || structuredClone(defaults.leaders),
+    badges: value.badges || [],
+    smartGoals: value.smartGoals || [],
+    customEvents: value.customEvents || {}
+  };
+}
+
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
@@ -131,6 +124,44 @@ function qs(selector) {
 
 function qsa(selector) {
   return [...document.querySelectorAll(selector)];
+}
+
+function escapeHTML(text) {
+  return String(text).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+}
+
+function dateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function daysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function formatDateTitle(date) {
+  return `${dayNames[date.getDay()]}, ${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+function formatEventTime(date, item) {
+  return `${dayNames[date.getDay()]}, ${date.getDate()} ${monthNames[date.getMonth()]}, ${to12Hour(item.start)} to ${to12Hour(item.end)}`;
+}
+
+function to12Hour(value) {
+  const [hourText, minuteText] = value.split(":");
+  const hour = Number(hourText);
+  const suffix = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minuteText} ${suffix}`;
+}
+
+function eventsForDate(date) {
+  const weekday = date.getDay();
+  const recurring = weekday >= 1 && weekday <= 5 ? structuredClone(weeklySchedule[weekday] || []) : [];
+  const custom = state.customEvents[dateKey(date)] || [];
+  const assignment = date.getMonth() === 3 && date.getDate() === 10
+    ? [event("assignment", "Home Assignment-02 is due", "17:00", "17:00", "Course event", "PHYS101: Physics I Homework Assignment #2", "Professor's Room #7", "Physics I (Spring 25/26)")]
+    : [];
+  return [...recurring, ...assignment, ...custom];
 }
 
 function metrics() {
@@ -178,11 +209,16 @@ function render() {
   renderTasks();
   renderLeaderboard();
   renderCalendar();
+  renderSmartGoals();
+  updateClock();
+  updatePomodoro();
+  updateNextClass();
   saveState();
 }
 
 function renderChart(value) {
   const ctx = qs("#grant-chart");
+  if (!ctx || !window.Chart) return;
   if (grantChart) {
     grantChart.data.datasets[0].data = [value, 100 - value];
     grantChart.update();
@@ -209,17 +245,17 @@ function renderBadges() {
     box.innerHTML = `<div class="badge"><strong>No badges yet</strong><span>Clear a weekly quest to unlock your first achievement.</span></div>`;
     return;
   }
-  box.innerHTML = state.badges.map(badge => `<div class="badge"><strong>${badge}</strong><span>Unlocked through quest performance.</span></div>`).join("");
+  box.innerHTML = state.badges.map(badge => `<div class="badge"><strong>${escapeHTML(badge)}</strong><span>Unlocked through quest performance.</span></div>`).join("");
 }
 
 function renderSubjects() {
   const cards = state.subjects.map((item, subjectIndex) => {
     const avg = Math.round(item.weeks.reduce((sum, week) => sum + week.readiness, 0) / item.weeks.length);
     const weeks = item.weeks.map((week, weekIndex) => (
-      `<button class="week-btn ${week.done ? "done" : ""}" data-subject="${subjectIndex}" data-week="${weekIndex}" title="Week ${week.week}: ${week.topic}">${week.week}</button>`
+      `<button class="week-btn ${week.done ? "done" : ""}" data-subject="${subjectIndex}" data-week="${weekIndex}" title="Week ${week.week}: ${escapeHTML(week.topic)}">${week.week}</button>`
     )).join("");
     return `<article class="subject-card">
-      <div class="subject-top"><strong>${item.name}</strong><span style="color:${item.accent}">${avg}% ready</span></div>
+      <div class="subject-top"><strong>${escapeHTML(item.name)}</strong><span style="color:${item.accent}">${avg}% ready</span></div>
       <div class="week-grid">${weeks}</div>
     </article>`;
   }).join("");
@@ -228,8 +264,8 @@ function renderSubjects() {
     const avg = Math.round(item.weeks.reduce((sum, week) => sum + week.readiness, 0) / item.weeks.length);
     const completed = item.weeks.filter(week => week.done).length;
     return `<div class="subject-detail">
-      <strong>${item.name}</strong>
-      <p class="muted">${completed} / 16 weeks cleared · Current grade ${item.currentGrade.toFixed(2)}</p>
+      <strong>${escapeHTML(item.name)}</strong>
+      <p class="muted">${completed} / 16 weeks cleared - Current grade ${item.currentGrade.toFixed(2)}</p>
       <div class="progress-bar" style="--value:${avg}%"><span></span></div>
     </div>`;
   }).join("");
@@ -243,7 +279,7 @@ function renderTasks() {
 function taskTemplate(item, type) {
   const subtitle = type === "routine" ? item.slot : `+${item.xp} XP`;
   return `<div class="task-item ${item.done ? "complete" : ""}">
-    <div><strong>${item.title}</strong><p class="muted">${subtitle}</p></div>
+    <div><strong>${escapeHTML(item.title)}</strong><p class="muted">${escapeHTML(subtitle)}</p></div>
     <button data-task-type="${type}" data-task-id="${item.id}">${item.done ? "Completed" : "Complete"}</button>
   </div>`;
 }
@@ -251,69 +287,189 @@ function taskTemplate(item, type) {
 function renderLeaderboard() {
   const rows = [[state.studentName || state.username, state.xp], ...state.leaders]
     .sort((a, b) => b[1] - a[1])
-    .map((leader, index) => `<div class="leader-row"><b>#${index + 1}</b><span>${leader[0]}</span><span>${leader[1]} XP</span></div>`)
+    .map((leader, index) => `<div class="leader-row"><b>#${index + 1}</b><span>${escapeHTML(leader[0])}</span><span>${leader[1]} XP</span></div>`)
     .join("");
   qs("#leaderboard-list").innerHTML = rows;
   qs("#leaderboard-page").innerHTML = rows;
 }
 
 function calendarCourses() {
-  return [...new Set(calendarDays.flatMap(day => day.events.map(item => item.course)).filter(Boolean))];
+  const sample = [];
+  for (let day = 1; day <= 5; day += 1) sample.push(...(weeklySchedule[day] || []));
+  Object.values(state.customEvents).forEach(list => sample.push(...list));
+  return [...new Set(sample.map(item => item.course).filter(Boolean))];
 }
 
 function renderCourseFilter() {
   const filter = qs("#course-filter");
-  if (!filter || filter.dataset.ready) return;
-  filter.innerHTML = `<option value="all">All courses</option>${calendarCourses().map(course => `<option value="${course}">${course}</option>`).join("")}`;
-  filter.dataset.ready = "true";
+  const current = filter.value || "all";
+  filter.innerHTML = `<option value="all">All courses</option>${calendarCourses().map(course => `<option value="${escapeHTML(course)}">${escapeHTML(course)}</option>`).join("")}`;
+  filter.value = calendarCourses().includes(current) ? current : "all";
 }
 
 function renderCalendar() {
   renderCourseFilter();
-  const day = calendarDays[activeCalendarIndex];
-  const filterValue = qs("#course-filter")?.value || "all";
-  const events = filterValue === "all" ? day.events : day.events.filter(item => item.course === filterValue);
-  qs("#calendar-date-title").textContent = day.label;
-  qs("#prev-day").textContent = activeCalendarIndex > 0 ? `◄  ${calendarDays[activeCalendarIndex - 1].short}` : "";
-  qs("#next-day").textContent = activeCalendarIndex < calendarDays.length - 1 ? `${calendarDays[activeCalendarIndex + 1].short}  ►` : "";
-  qs("#prev-day").disabled = activeCalendarIndex === 0;
-  qs("#next-day").disabled = activeCalendarIndex === calendarDays.length - 1;
-  qs("#calendar-events").innerHTML = events.length ? events.map(calendarEventTemplate).join("") : `<div class="calendar-empty">No classes or course events for this day.</div>`;
+  qs("#month-select").value = String(activeMonth);
+  qs("#calendar-date-title").textContent = `${monthNames[activeMonth]} ${YEAR}`;
+  qs("#selected-date-title").textContent = formatDateTitle(selectedDate);
+  renderMonthGrid();
+  renderSelectedEvents();
 }
 
-function calendarEventTemplate(item) {
+function renderMonthGrid() {
+  const firstDay = new Date(YEAR, activeMonth, 1).getDay();
+  const totalDays = daysInMonth(YEAR, activeMonth);
+  const cells = [];
+  for (let i = 0; i < firstDay; i += 1) cells.push(`<button class="calendar-day empty" tabindex="-1"></button>`);
+  for (let day = 1; day <= totalDays; day += 1) {
+    const date = new Date(YEAR, activeMonth, day);
+    const events = eventsForDate(date);
+    const filtered = filteredEvents(events);
+    const tags = filtered.slice(0, 2).map(item => `<span class="day-tag">${escapeHTML(item.title.split(" - ")[0])}</span>`).join("");
+    const isSelected = dateKey(date) === dateKey(selectedDate);
+    const isToday = dateKey(date) === dateKey(new Date());
+    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    cells.push(`<button class="calendar-day ${isSelected ? "selected" : ""} ${isToday ? "today" : ""} ${isWeekend ? "weekend" : ""}" data-calendar-day="${day}">
+      <span class="day-number">${day}${filtered.length ? `<span class="day-count">${filtered.length}</span>` : ""}</span>
+      <span class="day-tags">${tags}</span>
+    </button>`);
+  }
+  qs("#month-grid").innerHTML = cells.join("");
+}
+
+function filteredEvents(events) {
+  const filterValue = qs("#course-filter")?.value || "all";
+  return filterValue === "all" ? events : events.filter(item => item.course === filterValue);
+}
+
+function renderSelectedEvents() {
+  const events = filteredEvents(eventsForDate(selectedDate));
+  qs("#calendar-events").innerHTML = events.length ? events.map(item => calendarEventTemplate(item, selectedDate)).join("") : `<div class="calendar-empty">No classes or course events for this date.</div>`;
+}
+
+function calendarEventTemplate(item, date) {
   const headerClass = item.type === "group" ? "group" : item.type === "assignment" ? "assignment" : "";
-  const icon = item.type === "lecture" ? "🎓" : item.type === "group" ? "👥" : "⇧";
-  const teacherRow = item.teacher ? row("☰", item.teacher) : "";
-  const locationRow = item.location ? row("●", item.location) : "";
-  const cohortRow = item.cohort ? row("👥", item.cohort) : "";
-  const details = item.details ? row("☰", `<span class="event-description">${item.details}</span>`) : "";
+  const label = item.type === "lecture" ? "Lecture" : item.type === "group" ? "Group" : "Due";
+  const cohortRow = item.cohort ? row("Cohort", item.cohort) : "";
   return `<article class="calendar-event">
     <header class="calendar-event-header ${headerClass}">
-      <span class="event-icon">${icon}</span>
-      <h3>${item.title}</h3>
+      <span class="event-icon">${label}</span>
+      <h3>${escapeHTML(item.title)}</h3>
     </header>
     <div class="calendar-event-body">
-      ${row("◷", item.time)}
-      ${row("▣", item.category)}
-      ${details || teacherRow}
-      ${locationRow}
-      ${row("🎓", `<a href="#subjects" data-view="subjects">${item.course}</a>`)}
+      ${row("Time", formatEventTime(date, item))}
+      ${row("Type", item.category)}
+      ${row("Professor", item.teacher)}
+      ${row("Room", item.location)}
+      ${row("Course", `<a href="#subjects" data-view="subjects">${escapeHTML(item.course)}</a>`)}
       ${cohortRow}
     </div>
   </article>`;
 }
 
-function row(icon, content) {
-  return `<div class="event-row"><span class="row-icon">${icon}</span><span>${content}</span></div>`;
+function row(label, content) {
+  return `<div class="event-row"><span class="row-icon">${label}</span><span>${content}</span></div>`;
+}
+
+function updateClock() {
+  const now = new Date();
+  qs("#live-time").textContent = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  qs("#live-date").textContent = `${uzDayNames[now.getDay()]}, ${now.getDate()} ${monthNames[now.getMonth()]}`;
+  updateDeadline(now);
+}
+
+function updateDeadline(now) {
+  const deadline = new Date(2026, 4, 23, 23, 59, 0);
+  const total = 7 * 24 * 60 * 60 * 1000;
+  const diff = Math.max(0, deadline - now);
+  const hours = Math.floor(diff / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  qs("#deadline-left").textContent = `${hours} hours ${minutes} minutes left`;
+  const used = Math.min(100, Math.max(8, 100 - Math.round(diff / total * 100)));
+  qs("#deadline-progress").style.width = `${used}%`;
+}
+
+function nextUpcomingClass(now = new Date()) {
+  for (let offset = 0; offset < 40; offset += 1) {
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+    if (date.getFullYear() !== YEAR) continue;
+    const events = eventsForDate(date);
+    for (const item of events) {
+      const [hour, minute] = item.start.split(":").map(Number);
+      const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute, 0);
+      if (start > now) return { item, start, date };
+    }
+  }
+  return null;
+}
+
+function updateNextClass() {
+  const next = nextUpcomingClass();
+  if (!next) {
+    qs("#next-class-text").textContent = "No upcoming class found in this schedule.";
+    return;
+  }
+  const minutes = Math.round((next.start - new Date()) / 60000);
+  qs("#next-class-text").textContent = `${next.item.title} starts in ${minutes} minutes. Room: ${next.item.location}. Professor: ${next.item.teacher}.`;
+  if (remindersEnabled && minutes <= 30 && minutes >= 0) {
+    const key = `${dateKey(next.date)}-${next.item.start}-${next.item.title}`;
+    if (key !== lastReminderKey) {
+      lastReminderKey = key;
+      showReminder(`Class reminder: ${next.item.title}`, `Starts at ${to12Hour(next.item.start)} in ${next.item.location}.`);
+    }
+  }
+}
+
+function showReminder(title, body) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification(title, { body });
+  } else {
+    alert(`${title}\n${body}`);
+  }
+}
+
+function updatePomodoro() {
+  const minutes = Math.floor(pomodoroSeconds / 60);
+  const seconds = pomodoroSeconds % 60;
+  qs("#pomodoro-time").textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function startPomodoro() {
+  if (pomodoroInterval) {
+    clearInterval(pomodoroInterval);
+    pomodoroInterval = null;
+    qs("#pomodoro-start").textContent = "Start";
+    return;
+  }
+  qs("#pomodoro-start").textContent = "Pause";
+  pomodoroInterval = setInterval(() => {
+    pomodoroSeconds -= 1;
+    if (pomodoroSeconds <= 0) {
+      clearInterval(pomodoroInterval);
+      pomodoroInterval = null;
+      pomodoroSeconds = 5 * 60;
+      qs("#pomodoro-start").textContent = "Start";
+      showReminder("Pomodoro complete", "Great focus session. Take a 5 minute break.");
+    }
+    updatePomodoro();
+  }, 1000);
+}
+
+function renderSmartGoals() {
+  const list = qs("#smart-goals-list");
+  if (!state.smartGoals.length) {
+    list.innerHTML = `<div class="smart-goal">No SMART goals saved yet.</div>`;
+    return;
+  }
+  list.innerHTML = state.smartGoals.map(goal => `<div class="smart-goal"><strong>${escapeHTML(goal.specific)}</strong><br>${escapeHTML(goal.measurable)}<br>Deadline: ${escapeHTML(goal.deadline || "Not set")}</div>`).join("");
 }
 
 function openQuest(subjectIndex, weekIndex) {
   activeQuest = { subjectIndex, weekIndex };
   const subjectItem = state.subjects[subjectIndex];
   const week = subjectItem.weeks[weekIndex];
-  qs("#quest-title").textContent = `${subjectItem.name} · Week ${week.week}`;
-  qs("#quest-topic").textContent = `${week.topic} · best score ${week.score}%`;
+  qs("#quest-title").textContent = `${subjectItem.name} - Week ${week.week}`;
+  qs("#quest-topic").textContent = `${week.topic} - best score ${week.score}%`;
   const questions = [
     [`What is the best way to master ${week.topic}?`, ["Active recall and practice", "Only rereading notes", "Skipping exercises"]],
     ["What improves grant safety fastest?", ["Consistent daily habits", "Ignoring weak topics", "Waiting until finals"]],
@@ -321,9 +477,9 @@ function openQuest(subjectIndex, weekIndex) {
   ];
   qs("#quiz-box").innerHTML = questions.map((question, index) => `
     <div class="question">
-      <strong>${index + 1}. ${question[0]}</strong>
+      <strong>${index + 1}. ${escapeHTML(question[0])}</strong>
       ${question[1].map((choice, choiceIndex) => `
-        <label><input type="radio" name="q${index}" value="${choiceIndex}" ${choiceIndex === 0 ? "checked" : ""}> ${choice}</label>
+        <label><input type="radio" name="q${index}" value="${choiceIndex}" ${choiceIndex === 0 ? "checked" : ""}> ${escapeHTML(choice)}</label>
       `).join("")}
     </div>
   `).join("");
@@ -363,7 +519,7 @@ document.addEventListener("click", event => {
 
   const nav = event.target.closest("[data-view]");
   if (nav) {
-    qsa(".nav-link").forEach(link => link.classList.toggle("active", link === nav));
+    qsa(".nav-link").forEach(link => link.classList.toggle("active", link.dataset.view === nav.dataset.view));
     qsa(".view").forEach(view => view.classList.toggle("active", view.id === nav.dataset.view));
   }
 
@@ -380,18 +536,32 @@ document.addEventListener("click", event => {
 
   const week = event.target.closest("[data-subject]");
   if (week) openQuest(Number(week.dataset.subject), Number(week.dataset.week));
-});
 
-qs("#prev-day").addEventListener("click", () => {
-  if (activeCalendarIndex > 0) {
-    activeCalendarIndex -= 1;
+  const calendarDay = event.target.closest("[data-calendar-day]");
+  if (calendarDay) {
+    selectedDate = new Date(YEAR, activeMonth, Number(calendarDay.dataset.calendarDay));
     renderCalendar();
   }
 });
 
-qs("#next-day").addEventListener("click", () => {
-  if (activeCalendarIndex < calendarDays.length - 1) {
-    activeCalendarIndex += 1;
+qs("#month-select").addEventListener("change", event => {
+  activeMonth = Number(event.target.value);
+  selectedDate = new Date(YEAR, activeMonth, 1);
+  renderCalendar();
+});
+
+qs("#prev-month").addEventListener("click", () => {
+  if (activeMonth > 0) {
+    activeMonth -= 1;
+    selectedDate = new Date(YEAR, activeMonth, 1);
+    renderCalendar();
+  }
+});
+
+qs("#next-month").addEventListener("click", () => {
+  if (activeMonth < 11) {
+    activeMonth += 1;
+    selectedDate = new Date(YEAR, activeMonth, 1);
     renderCalendar();
   }
 });
@@ -401,9 +571,12 @@ qs("#course-filter").addEventListener("change", renderCalendar);
 qs("#new-event-btn").addEventListener("click", () => {
   const customTitle = prompt("Event title");
   if (!customTitle) return;
-  const customTime = prompt("Time", `${calendarDays[activeCalendarIndex].short}, 4:00 PM » 5:00 PM`) || `${calendarDays[activeCalendarIndex].short}, 4:00 PM » 5:00 PM`;
-  calendarDays[activeCalendarIndex].events.push(event("group", customTitle, customTime, "Group event", "Student planned session", "Study room", "Personal Study Plan"));
-  qs("#course-filter").dataset.ready = "";
+  const customStart = prompt("Start time, for example 16:00", "16:00") || "16:00";
+  const customEnd = prompt("End time, for example 17:00", "17:00") || "17:00";
+  const key = dateKey(selectedDate);
+  state.customEvents[key] = state.customEvents[key] || [];
+  state.customEvents[key].push(event("group", customTitle, customStart, customEnd, "Group event", "Student planned session", "Study room", "Personal Study Plan"));
+  saveState();
   renderCalendar();
 });
 
@@ -422,6 +595,7 @@ qs("#register-form").addEventListener("submit", event => {
 });
 
 qs("#logout-btn").addEventListener("click", () => setLoggedIn(false));
+
 qs("#seed-btn").addEventListener("click", () => {
   const loggedIn = state.loggedIn;
   const studentName = state.studentName;
@@ -432,6 +606,43 @@ qs("#seed-btn").addEventListener("click", () => {
   state.username = username;
   render();
 });
+
 qs("#submit-quiz").addEventListener("click", submitQuest);
+qs("#pomodoro-start").addEventListener("click", startPomodoro);
+qs("#pomodoro-reset").addEventListener("click", () => {
+  clearInterval(pomodoroInterval);
+  pomodoroInterval = null;
+  pomodoroSeconds = 25 * 60;
+  qs("#pomodoro-start").textContent = "Start";
+  updatePomodoro();
+});
+
+qs("#save-smart-goal").addEventListener("click", () => {
+  const specific = qs("#smart-specific").value.trim();
+  const measurable = qs("#smart-measurable").value.trim();
+  const deadline = qs("#smart-deadline").value;
+  if (!specific || !measurable) return;
+  state.smartGoals.unshift({ specific, measurable, deadline });
+  qs("#smart-specific").value = "";
+  qs("#smart-measurable").value = "";
+  qs("#smart-deadline").value = "";
+  renderSmartGoals();
+  saveState();
+});
+
+qs("#enable-notifications").addEventListener("click", async () => {
+  remindersEnabled = true;
+  if ("Notification" in window && Notification.permission !== "granted") {
+    await Notification.requestPermission();
+  }
+  updateNextClass();
+});
+
+setInterval(() => {
+  updateClock();
+  updateNextClass();
+}, 30000);
 
 setLoggedIn(state.loggedIn);
+updateClock();
+updatePomodoro();
