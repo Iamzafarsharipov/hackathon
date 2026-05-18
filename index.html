@@ -51,6 +51,7 @@
         <a class="nav-link active" href="#dashboard" data-view="dashboard">Dashboard</a>
         <a class="nav-link" href="#habits" data-view="habits">Daily Habits</a>
         <a class="nav-link" href="#routine" data-view="routine">Daily Routine</a>
+        <a class="nav-link" href="#calendar" data-view="calendar">Calendar</a>
         <a class="nav-link" href="#subjects" data-view="subjects">Subjects</a>
         <a class="nav-link" href="#leaderboard" data-view="leaderboard">Leaderboard</a>
       </nav>
@@ -127,6 +128,32 @@
           <h2>Daily Routine</h2>
           <p class="muted">A focused day keeps the streak alive.</p>
           <div id="routine-list" class="task-list"></div>
+        </article>
+      </section>
+
+      <section id="calendar" class="view">
+        <article class="calendar-panel">
+          <div class="calendar-toolbar">
+            <div class="calendar-selects">
+              <select id="calendar-mode" aria-label="Calendar view">
+                <option>Day</option>
+                <option>Week</option>
+              </select>
+              <select id="course-filter" aria-label="Course filter">
+                <option value="all">All courses</option>
+              </select>
+            </div>
+            <button id="new-event-btn" class="calendar-new-btn">New event</button>
+          </div>
+
+          <div class="calendar-nav">
+            <button id="prev-day" class="calendar-link"></button>
+            <h2 id="calendar-date-title">Monday, 6 April 2026</h2>
+            <button id="next-day" class="calendar-link"></button>
+          </div>
+
+          <div id="calendar-events" class="calendar-events"></div>
+          <a class="calendar-import" href="#calendar">Import or export calendars</a>
         </article>
       </section>
 
