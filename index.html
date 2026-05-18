@@ -52,6 +52,7 @@
         <a class="nav-link" href="#habits" data-view="habits">Daily Habits</a>
         <a class="nav-link" href="#routine" data-view="routine">Daily Routine</a>
         <a class="nav-link" href="#calendar" data-view="calendar">Calendar</a>
+        <a class="nav-link" href="#smart" data-view="smart">SMART Goals</a>
         <a class="nav-link" href="#subjects" data-view="subjects">Subjects</a>
         <a class="nav-link" href="#leaderboard" data-view="leaderboard">Leaderboard</a>
       </nav>
@@ -179,6 +180,51 @@
         </article>
       </section>
 
+      <section id="smart" class="view">
+        <article class="smart-panel">
+          <p class="eyebrow">Goal Designer</p>
+          <h2>SMART Goals</h2>
+          <p class="smart-intro">SMART is a framework for setting clear, trackable, and achievable goals. Each letter stands for one quality your goal should have.</p>
+
+          <div class="smart-principles">
+            <div><b>S</b><strong>Specific</strong><span>Clearly define what you want to accomplish. Avoid vague statements.</span></div>
+            <div><b>M</b><strong>Measurable</strong><span>Include numbers or criteria so you can track your progress.</span></div>
+            <div><b>A</b><strong>Achievable</strong><span>Make sure the goal is realistic given your resources and time.</span></div>
+            <div><b>R</b><strong>Relevant</strong><span>The goal should matter to you and align with your broader objectives.</span></div>
+            <div><b>T</b><strong>Time-Bound</strong><span>Set a deadline or timeframe to create urgency and focus.</span></div>
+          </div>
+
+          <div class="smart-examples">
+            <h3>Examples</h3>
+            <p class="good">Good: Complete 3 chapters of Linear Algebra by March 30 with 80%+ quiz score.</p>
+            <p class="bad">Bad: Study more math.</p>
+            <p class="good">Good: Read 20 pages of English literature every day for 2 weeks.</p>
+            <p class="bad">Bad: Read more books.</p>
+          </div>
+
+          <div class="smart-builder">
+            <h3>Create a SMART Goal</h3>
+            <label>Goal Title<input id="smart-title" placeholder="e.g., Master Data Structures"></label>
+            <label>Specific<textarea id="smart-specific" placeholder="What exactly will you do?"></textarea></label>
+            <label>Measurable<textarea id="smart-measurable" placeholder="How will you measure progress?"></textarea></label>
+            <label>Achievable<textarea id="smart-achievable" placeholder="Is this realistic for you?"></textarea></label>
+            <label>Relevant<textarea id="smart-relevant" placeholder="Why does this goal matter?"></textarea></label>
+            <label>Time-Bound<textarea id="smart-timebound" placeholder="What is your timeframe?"></textarea></label>
+            <div class="smart-builder-row">
+              <label>Deadline<input id="smart-deadline" type="date"></label>
+              <label>Status<select id="smart-status"><option>Active</option><option>Paused</option><option>Done</option></select></label>
+              <label>Progress <span id="smart-progress-value">0%</span><input id="smart-progress" type="range" min="0" max="100" value="0"></label>
+            </div>
+            <button id="save-smart-goal" class="smart-save-btn">Save</button>
+          </div>
+
+          <div class="saved-smart">
+            <h3>Saved SMART Goals</h3>
+            <div id="smart-goals-list" class="smart-goals-list"></div>
+          </div>
+        </article>
+      </section>
+
       <section id="leaderboard" class="view">
         <article class="panel wide">
           <h2>Campus Rank</h2>
@@ -224,14 +270,9 @@
 
       <section class="rail-card">
         <p class="rail-title">SMART Goals</p>
-        <p class="smart-help">SMART means Specific, Measurable, Achievable, Relevant, and Time-bound. Write one goal with a clear result and deadline.</p>
-        <div class="smart-form">
-          <input id="smart-specific" placeholder="Specific goal">
-          <input id="smart-measurable" placeholder="Measurable result">
-          <input id="smart-deadline" type="date">
-          <button id="save-smart-goal">Save goal</button>
-        </div>
-        <div id="smart-goals-list" class="smart-goals-list"></div>
+        <p class="smart-help">Build goals with Specific, Measurable, Achievable, Relevant, and Time-bound fields.</p>
+        <button class="notify-btn" data-view="smart">Open SMART Builder</button>
+        <div id="smart-goals-mini" class="smart-goals-list"></div>
       </section>
 
       <section class="rail-card">

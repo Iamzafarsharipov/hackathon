@@ -12,6 +12,7 @@ const defaults = {
   streak: 0,
   multiplier: 1,
   badges: [],
+  userDirectory: [],
   smartGoals: [],
   customEvents: {},
   habits: [
@@ -32,10 +33,14 @@ const defaults = {
     subject("Physics", "#a78bfa", ["Kinematics", "Newton Laws", "Energy", "Electric Fields"])
   ],
   leaders: [
-    ["Malika", 2450],
-    ["Aziz", 1980],
-    ["Dilshod", 1540],
-    ["Madina", 1380]
+    { name: "Sulaymon Abdullayev", department: "DT", xp: 2840, idNumber: "2531001" },
+    { name: "Mohira Abdullayeva", department: "SE", xp: 2715, idNumber: "2511001" },
+    { name: "Jasmina Abdullayeva", department: "AI", xp: 2630, idNumber: "2521001" },
+    { name: "Madina Abdusamatova", department: "SE", xp: 2490, idNumber: "2511022" },
+    { name: "Dadajon Abdusattorov", department: "AI", xp: 2365, idNumber: "2521002" },
+    { name: "Azizbek Abubakirov", department: "AI", xp: 2250, idNumber: "2521024" },
+    { name: "Muhiddin Ahmedjanov", department: "DT", xp: 2135, idNumber: "2531002" },
+    { name: "Mirzabek Aliev", department: "AI", xp: 2040, idNumber: "2521003" }
   ]
 };
 
@@ -107,11 +112,18 @@ function normalizeState(value) {
     habits: value.habits || structuredClone(defaults.habits),
     routine: value.routine || structuredClone(defaults.routine),
     subjects: value.subjects || structuredClone(defaults.subjects),
-    leaders: value.leaders || structuredClone(defaults.leaders),
+    leaders: normalizeLeaders(value.leaders || structuredClone(defaults.leaders)),
+    userDirectory: value.userDirectory || [],
     badges: value.badges || [],
     smartGoals: value.smartGoals || [],
     customEvents: value.customEvents || {}
   };
+}
+
+function normalizeLeaders(leaders) {
+  return leaders.map((leader, index) => Array.isArray(leader)
+    ? { name: leader[0], department: "EduQuest", xp: leader[1], idNumber: `LEG-${index + 1}` }
+    : leader);
 }
 
 function saveState() {
@@ -285,12 +297,36 @@ function taskTemplate(item, type) {
 }
 
 function renderLeaderboard() {
-  const rows = [[state.studentName || state.username, state.xp], ...state.leaders]
-    .sort((a, b) => b[1] - a[1])
-    .map((leader, index) => `<div class="leader-row"><b>#${index + 1}</b><span>${escapeHTML(leader[0])}</span><span>${leader[1]} XP</span></div>`)
+  syncCurrentUser();
+  const rows = [...state.leaders, ...state.userDirectory]
+    .sort((a, b) => b.xp - a.xp)
+    .map((leader, index) => `<div class="leader-row">
+      <b>#${index + 1}</b>
+      <span><strong>${escapeHTML(leader.name)}</strong><small>${escapeHTML(leader.idNumber || "Arena User")} - ${escapeHTML(leader.department || "EduQuest")}</small></span>
+      <span>${leader.xp} XP</span>
+    </div>`)
     .join("");
   qs("#leaderboard-list").innerHTML = rows;
   qs("#leaderboard-page").innerHTML = rows;
+}
+
+function syncCurrentUser() {
+  if (!state.loggedIn) return;
+  const name = state.studentName || state.username || "Student";
+  const username = state.username || name;
+  const existing = state.userDirectory.find(user => user.username === username);
+  if (existing) {
+    existing.name = name;
+    existing.xp = state.xp;
+  } else {
+    state.userDirectory.push({
+      username,
+      name,
+      department: "SE",
+      idNumber: `U-${String(state.userDirectory.length + 1).padStart(4, "0")}`,
+      xp: state.xp
+    });
+  }
 }
 
 function calendarCourses() {
@@ -350,25 +386,28 @@ function renderSelectedEvents() {
 function calendarEventTemplate(item, date) {
   const headerClass = item.type === "group" ? "group" : item.type === "assignment" ? "assignment" : "";
   const label = item.type === "lecture" ? "Lecture" : item.type === "group" ? "Group" : "Due";
-  const cohortRow = item.cohort ? row("Cohort", item.cohort) : "";
   return `<article class="calendar-event">
     <header class="calendar-event-header ${headerClass}">
       <span class="event-icon">${label}</span>
       <h3>${escapeHTML(item.title)}</h3>
     </header>
     <div class="calendar-event-body">
-      ${row("Time", formatEventTime(date, item))}
-      ${row("Type", item.category)}
-      ${row("Professor", item.teacher)}
-      ${row("Room", item.location)}
-      ${row("Course", `<a href="#subjects" data-view="subjects">${escapeHTML(item.course)}</a>`)}
-      ${cohortRow}
+      <table class="event-table">
+        <tbody>
+          ${row("Time", formatEventTime(date, item))}
+          ${row("Event type", item.category)}
+          ${row("Professor", item.teacher)}
+          ${row("Room", item.location)}
+          ${row("Course", `<a href="#subjects" data-view="subjects">${escapeHTML(item.course)}</a>`)}
+          ${item.cohort ? row("Cohort", item.cohort) : ""}
+        </tbody>
+      </table>
     </div>
   </article>`;
 }
 
 function row(label, content) {
-  return `<div class="event-row"><span class="row-icon">${label}</span><span>${content}</span></div>`;
+  return `<tr class="event-row"><th>${label}</th><td>${content}</td></tr>`;
 }
 
 function updateClock() {
@@ -457,11 +496,20 @@ function startPomodoro() {
 
 function renderSmartGoals() {
   const list = qs("#smart-goals-list");
+  const mini = qs("#smart-goals-mini");
   if (!state.smartGoals.length) {
     list.innerHTML = `<div class="smart-goal">No SMART goals saved yet.</div>`;
+    mini.innerHTML = `<div class="smart-goal">No SMART goals saved yet.</div>`;
     return;
   }
-  list.innerHTML = state.smartGoals.map(goal => `<div class="smart-goal"><strong>${escapeHTML(goal.specific)}</strong><br>${escapeHTML(goal.measurable)}<br>Deadline: ${escapeHTML(goal.deadline || "Not set")}</div>`).join("");
+  const html = state.smartGoals.map(goal => `<div class="smart-goal">
+    <strong>${escapeHTML(goal.title || goal.specific)}</strong>
+    <span>${escapeHTML(goal.status || "Active")} - ${Number(goal.progress || 0)}%</span>
+    <p>${escapeHTML(goal.specific)}</p>
+    <small>Measure: ${escapeHTML(goal.measurable)}<br>Deadline: ${escapeHTML(goal.deadline || "Not set")}</small>
+  </div>`).join("");
+  list.innerHTML = html;
+  mini.innerHTML = state.smartGoals.slice(0, 2).map(goal => `<div class="smart-goal"><strong>${escapeHTML(goal.title || goal.specific)}</strong><br>${Number(goal.progress || 0)}% complete</div>`).join("");
 }
 
 function openQuest(subjectIndex, weekIndex) {
@@ -584,6 +632,7 @@ qs("#login-form").addEventListener("submit", event => {
   event.preventDefault();
   state.username = qs("#login-username").value.trim() || "zafar";
   state.studentName = state.username;
+  syncCurrentUser();
   setLoggedIn(true);
 });
 
@@ -591,6 +640,7 @@ qs("#register-form").addEventListener("submit", event => {
   event.preventDefault();
   state.studentName = qs("#register-name").value.trim() || "Student";
   state.username = qs("#register-username").value.trim() || "student";
+  syncCurrentUser();
   setLoggedIn(true);
 });
 
@@ -618,16 +668,33 @@ qs("#pomodoro-reset").addEventListener("click", () => {
 });
 
 qs("#save-smart-goal").addEventListener("click", () => {
+  const title = qs("#smart-title").value.trim();
   const specific = qs("#smart-specific").value.trim();
   const measurable = qs("#smart-measurable").value.trim();
+  const achievable = qs("#smart-achievable").value.trim();
+  const relevant = qs("#smart-relevant").value.trim();
+  const timebound = qs("#smart-timebound").value.trim();
   const deadline = qs("#smart-deadline").value;
+  const status = qs("#smart-status").value;
+  const progress = qs("#smart-progress").value;
   if (!specific || !measurable) return;
-  state.smartGoals.unshift({ specific, measurable, deadline });
+  state.smartGoals.unshift({ title, specific, measurable, achievable, relevant, timebound, deadline, status, progress });
+  qs("#smart-title").value = "";
   qs("#smart-specific").value = "";
   qs("#smart-measurable").value = "";
+  qs("#smart-achievable").value = "";
+  qs("#smart-relevant").value = "";
+  qs("#smart-timebound").value = "";
   qs("#smart-deadline").value = "";
+  qs("#smart-status").value = "Active";
+  qs("#smart-progress").value = "0";
+  qs("#smart-progress-value").textContent = "0%";
   renderSmartGoals();
   saveState();
+});
+
+qs("#smart-progress").addEventListener("input", event => {
+  qs("#smart-progress-value").textContent = `${event.target.value}%`;
 });
 
 qs("#enable-notifications").addEventListener("click", async () => {
