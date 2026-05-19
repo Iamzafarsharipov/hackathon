@@ -61,10 +61,7 @@
         <strong><b id="xp-value">0</b> XP</strong>
         <small><b id="streak-value">0</b> day streak - <b id="multiplier-value">1.0</b>x</small>
       </div>
-      <form action="{% url 'logout' %}" method="post">
-    {% csrf_token %}
-    <button type="submit" id="logout-btn" class="logout-btn">Logout</button>
-</form>
+      <button id="logout-btn" class="logout-btn">Logout</button
     </aside>
 
     <main class="content">
