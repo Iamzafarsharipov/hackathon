@@ -12,6 +12,11 @@ class StudentProfile(models.Model):
     xp_multiplier = models.DecimalField(max_digits=3, decimal_places=1, default=1.0)
     last_activity_date = models.DateField(null=True, blank=True)
     target_exam_readiness = models.PositiveIntegerField(default=78)
+    # --- YANGI QO'SHILADIGAN MAYDONLAR ---
+    is_verified = models.BooleanField(default=False)
+    verification_token = models.CharField(max_length=100, null=True, blank=True)
+    verification_expiry = models.DateTimeField(null=True, blank=True)
+    # -------------------------------------
 
     def __str__(self):
         return f"{self.user.username} profile"
