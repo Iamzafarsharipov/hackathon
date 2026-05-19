@@ -199,44 +199,13 @@ nav {
 .profile-mini span, .profile-mini small { color: #a5f3fc; }
 .profile-mini strong { font-size: 1.35rem; }
 
-/* style.css dagi 202-qator atrofida */
 .logout-btn {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 18px;
-    margin-top: 10px;
-    border: 1px solid rgba(251, 113, 133, 0.3); /* Rose border */
-    background: rgba(251, 113, 133, 0.08);     /* Soft rose background */
-    color: #fecdd3;                            /* Text color */
-    border-radius: 14px;
-    font-weight: 900;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(251, 113, 133, 0.3);
+  background: rgba(251, 113, 133, 0.08);
+  color: #fecdd3;
 }
-
-/* Hover effekti - sichqoncha borganda */
-.logout-btn:hover {
-    background: rgba(251, 113, 133, 0.2);
-    border-color: rgba(251, 113, 133, 0.6);
-    color: #ffffff;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(251, 113, 133, 0.1);
-}
-
-/* Tugma bosilgandagi effekt */
-.logout-btn:active {
-    transform: translateY(0);
-}
-
-/* Sidebar footer uchun qo'shimcha joylashuv */
-.sidebar-footer {
-    margin-top: auto; /* Profil blokidan keyin eng pastga tushiradi */
-    padding-top: 10px;
-}
-
 .content {
   padding: 28px;
   min-width: 0;
