@@ -78,24 +78,3 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "login"
-# --- AUTH UPGRADE SETTINGS ---
-
-# Email sozlamalari (SMTP)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get("EMAIL_USER") # .env dan olinadi
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_PASS") # .env dan olinadi
-
-# JWT Sozlamalari (Agar djangorestframework-simplejwt ishlatsangiz)
-from datetime import timedelta
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'ROTATE_REFRESH_TOKENS': False,
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
-}
-
-# Verification token muddati (24 soat)
-VERIFICATION_TOKEN_EXPIRE_HOURS = 24
